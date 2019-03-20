@@ -1,3 +1,3 @@
-# self_optinmizing_balancing_on_the_WAN
+# Self Optinmizing/Balancing on the WAN
 
 In order to better balance the overall link utilization in the network, customers can utilize Juniper Healthbot Machine learning capability to build the link utilization baseline over a period of time for each link(instead of manually configure the utilization threshold in Northstar controller).  Northstar can then use this information to optimize and balance the link utilization in  the network.  For example, during busy hours, it is considered as normal to run some links at 90% and Northstar will not reroute the traffic over those links; however, during off-peak hours, when a link’s utilization goes above 75%, it can be considered as not-balanced and Northstar can reroute part of the traffic on that link to bring down the utilization on that link.
