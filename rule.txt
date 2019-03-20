@@ -1,0 +1,103 @@
+iceberg {
+    topic sub.statistics {
+    rule check-ifl-out-traffic {
+    keys [ interface-name sub-interface-index ];
+    synopsis "Sub Interface output traffic analyzer.";
+    description "Collects output traffic (out-octets) periodically and notifies in case of traffic is above threshold";
+    function octets-to-mbps {
+        description "function converts octets to mbps";
+        path octets-to-mbps-sub.py;
+        method octets_to_mbps;
+        argument ifl_id {
+            mandatory;
+        }
+        argument intf_name {
+            mandatory;
+        }
+        argument octets {
+            mandatory;
+        }
+    }
+    sensor interfaces {
+        synopsis "Sub Interface open-config sensor definition";
+        description "Sub Interfaces open-config sensor to collect telemetry data from network device";
+        open-config {
+            sensor-name /interfaces/;
+            frequency 20s;
+        }
+    }
+    field interface-name {
+        sensor interfaces {
+            where "/interfaces/interface/@name =~ /{{ifd_name}}/";
+            path "/interfaces/interface/@name";
+        }
+        type string;
+        description "Interfaces to be monitored";
+    }
+    field out-mbps {
+        formula {
+            user-defined-function {
+                function-name octets-to-mbps;
+                argument intf_name "$interface-name";
+                argument octets "$out-octets-stats";
+                argument ifl_id "$sub-interface-index";
+            }
+        }
+        type float;
+    }
+    field out-mbps-dynamic {
+        formula {
+            dynamic-threshold {
+                algorithm k-means;
+                learning-period 1d;
+                pattern-periodicity 1h;
+                field-name "$out-mbps";
+            }
+        }
+        description "detects anamolies dynamically using kmeans algorithm";
+    }
+    field out-octets-stats {
+        sensor interfaces {
+            path /interfaces/interface/subinterfaces/subinterface/state/counters/out-octets;
+        }
+        type integer;
+        description "Sub Interface statistics counter (out-octets) value.";
+    }
+    field sub-interface-index {
+        sensor interfaces {
+            where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl_no}}/";
+            path "/interfaces/interface/subinterfaces/subinterface/@index";
+        }
+        type string;
+        description "Interfaces to be monitored";
+    }
+    trigger out-traffic {
+        synopsis "Sub Interface output traffic kpi";
+        description "Sets health based on output traffic exceed threshold.";
+        term is-interface-out-traffic-abnormal {
+            when {
+                greater-than "$out-octets-stats" 1;
+            }
+            then {
+                status {
+                    color green;
+                    message "$interface-name.$sub-interface-index rate is $out-mbps ";
+                }
+            }
+        }
+    }
+    variable ifd_name {
+        value .*;
+        description "Interfaces to be monitored, regular expression, eg 'ge-.*'";
+        type string;
+    }
+    variable ifl_no {
+        value .*;
+        description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
+        type string;
+    }
+}
+
+    }
+}
+ 
