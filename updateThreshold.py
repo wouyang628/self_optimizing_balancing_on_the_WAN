@@ -1,7 +1,7 @@
 import json
 import datetime as dt
 import user_functions
-#read in the ML result from Heahtbot
+#read in the Machine Learning Baseline result from Heahtbot
 
 with open('ml.json', 'r') as data_file:
     json_data = data_file.read()
